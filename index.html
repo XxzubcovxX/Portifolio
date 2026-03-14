@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>André Zubcov | Cloud & Infra</title>
+    <style>
+        /* --- PALETA DE CORES MODERNA --- */
+        :root {
+            --bg-base: #090b10;
+            --bg-card: rgba(13, 17, 23, 0.85);
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-purple: #bc8cff;
+            --status-green: #3fb950;
+            --font-mono: 'Fira Code', 'Courier New', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            overflow-x: hidden;
+            position: relative;
+            padding-top: 90px; 
+        }
+
+        /* --- BACKGROUND ANIMADO --- */
+        #bg-terminals {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1; overflow: hidden; pointer-events: none; opacity: 0.15;
+        }
+
+        .bg-terminal {
+            position: absolute; font-family: var(--font-mono); color: var(--accent-blue);
+            font-size: 0.85rem; white-space: pre-wrap;
+        }
+
+        /* --- TERMINAL INTERATIVO FIXO NO TOPO --- */
+        #interactive-terminal {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background-color: rgba(13, 17, 23, 0.95); 
+            border-bottom: 2px solid var(--accent-blue);
+            padding: 15px 25px; 
+            font-family: var(--font-mono); 
+            font-size: 1.1rem; 
+            display: flex; align-items: center; z-index: 1000; 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+        }
+        .term-prompt { color: var(--status-green); margin-right: 15px; font-weight: bold; white-space: nowrap; }
+        .term-prompt span { color: var(--text-main); }
+        
+        #cmd-input {
+            background: transparent; border: none; color: #fff; font-family: var(--font-mono);
+            font-size: 1.1rem; width: 100%; outline: none; caret-color: var(--accent-blue);
+        }
+        
+        #term-feedback {
+            position: fixed; top: 75px; left: 25px; background: rgba(0,0,0,0.9);
+            color: var(--accent-blue); font-family: var(--font-mono); font-size: 0.9rem;
+            padding: 8px 12px; border-radius: 4px; display: none; 
+            border: 1px solid var(--border-color); z-index: 999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        /* --- LAYOUT PRINCIPAL --- */
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem; position: relative; z-index: 1; }
+
+        /* --- CABEÇALHO E FOTO DE PERFIL --- */
+        header { padding: 1rem 0 2rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; display: flex; align-items: center; gap: 25px; }
+        .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-blue); box-shadow: 0 0 15px rgba(88, 166, 255, 0.2); background-color: var(--bg-card); }
+        .header-info h1 { font-size: 3rem; color: #ffffff; margin-bottom: 0.2rem; font-weight: 700; }
+        .header-info h2 { font-family: var(--font-mono); font-size: 1.1rem; color: var(--accent-purple); font-weight: normal; }
+
+        @media (max-width: 600px) {
+            header { flex-direction: column; text-align: center; }
+            .header-info h1 { font-size: 2.2rem; }
+        }
+
+        /* --- DASHBOARD DE STATUS --- */
+        .server-status-board {
+            background-color: rgba(0, 0, 0, 0.6); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1.5rem; margin-bottom: 3rem;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .status-item { display: flex; flex-direction: column; font-family: var(--font-mono); }
+        .status-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .status-value { font-size: 1.2rem; color: var(--accent-blue); font-weight: bold; margin-bottom: 5px; transition: all 0.3s; }
+        
+        .status-value.online { color: var(--status-green); display: flex; align-items: center; gap: 8px; }
+        .pulse { width: 8px; height: 8px; background-color: var(--status-green); border-radius: 50%; box-shadow: 0 0 8px var(--status-green); animation: pulse-dot 1.5s infinite; }
+        @keyframes pulse-dot { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px var(--status-green); } 100% { transform: scale(0.95); opacity: 0.8; } }
+
+        .graph-bar { width: 100%; height: 8px; background-color: #21262d; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .graph-fill { height: 100%; border-radius: 4px; transition: width 1s ease-in-out; }
+        .cpu-fill { background-color: var(--accent-purple); }
+        .ram-fill { background-color: var(--accent-blue); }
+
+        /* --- SEÇÕES & VIEWS --- */
+        .view { display: none; animation: fadeIn 0.4s ease; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        section { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 2.5rem; margin-bottom: 2rem; backdrop-filter: blur(10px); }
+        .section-title { font-family: var(--font-mono); font-size: 1.2rem; color: var(--accent-blue); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .section-title::before { content: '~/'; color: var(--text-muted); }
+        p { line-height: 1.7; margin-bottom: 1rem; color: var(--text-main); }
+
+        /* --- CARDS --- */
+        .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .project-card { border: 1px solid var(--border-color); border-radius: 6px; padding: 1.8rem; background-color: rgba(13, 17, 23, 0.5); transition: all 0.2s; height: 100%; }
+        .project-card:hover { border-color: var(--accent-purple); transform: translateY(-3px); }
+        .project-card h3 { font-size: 1.2rem; margin-bottom: 0.8rem; color: #fff; }
+        .project-card p { font-size: 0.95rem; color: var(--text-muted); }
+        .tech-tags { margin-top: 1rem; display: flex; gap: 8px; flex-wrap: wrap; }
+        .tech-tags span { font-size: 0.75rem; padding: 3px 8px; background: rgba(88, 166, 255, 0.1); color: var(--accent-blue); border-radius: 12px; font-family: var(--font-mono); border: 1px solid rgba(88, 166, 255, 0.2); }
+
+        /* --- LISTAS --- */
+        .list-item { border-left: 3px solid var(--accent-purple); padding-left: 1.5rem; margin-bottom: 2rem; }
+        .list-item h3 { color: #fff; margin-bottom: 5px; }
+        .list-item .date { font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px; display: block; }
+
+        /* --- RODAPÉ --- */
+        footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid var(--border-color); margin-top: 3rem; }
+        .social-links { margin-bottom: 15px; font-family: var(--font-mono); font-size: 1rem; }
+        .social-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; transition: color 0.2s; }
+        .social-links a:hover { color: var(--accent-blue); text-shadow: 0 0 8px rgba(88, 166, 255, 0.5); }
+    </style>
+</head>
+<body>
+
+    <div id="bg-terminals"></div>
+
+    <div id="interactive-terminal">
+        <div class="term-prompt">root@portfolio<span>:~#</span></div>
+        <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" placeholder="Type 'help' or 'ls'...">
+    </div>
+    <div id="term-feedback"></div>
+
+    <div class="container">
+        <header>
+            <img src="https://ui-avatars.com/api/?name=AZ&background=0D1117&color=58a6ff&size=150" alt="André Zubcov" class="profile-pic">
+            <div class="header-info">
+                <h1>André Zubcov</h1>
+                <h2>SysAdmin & DevOps Enthusiast</h2>
+            </div>
+        </header>
+
+        <div class="server-status-board">
+            <div class="status-item">
+                <span class="status-label">System Status</span>
+                <span class="status-value online" id="sys-status"><div class="pulse"></div> BOOTING...</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);" id="sys-uptime">Uptime: --</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">CPU Usage</span>
+                <span class="status-value" id="sys-cpu">--%</span>
+                <div class="graph-bar"><div class="graph-fill cpu-fill" id="bar-cpu" style="width: 0%;"></div></div>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Memory Allocation</span>
+                <span class="status-value" id="sys-ram">-- GB / -- GB</span>
+                <div class="graph-bar"><div class="graph-fill ram-fill" id="bar-ram" style="width: 0%;"></div></div>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Active Containers</span>
+                <span class="status-value" id="sys-docker">--</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Docker Engine</span>
+            </div>
+        </div>
+
+        <div id="view-home" class="view active">
+            <section>
+                <h2 class="section-title">whoami</h2>
+                <p>Estudante do 7º semestre de Engenharia da Computação no ENIAC. Construindo minha carreira em infraestrutura, com forte foco na administração de servidores Linux, Docker e Cloud.</p>
+                <p>Acredito na automação como solução para problemas repetitivos e gerencio meu próprio Home Lab (onde este site está hospedado) para validar na prática conceitos de redes, segurança (Hardening/Wazuh) e CI/CD.</p>
+            </section>
+
+            <section>
+                <h2 class="section-title">projects</h2>
+                <div class="projects-grid">
+                    <div class="project-card">
+                        <h3>Server Automation Shell</h3>
+                        <p>Scripts modulares em Bash para monitoramento de serviços (Nginx, Docker), auditoria de logs e gestão de usuários com privilégios de root.</p>
+                        <div class="tech-tags"><span>Bash</span> <span>Fail2Ban</span> <span>Linux</span></div>
+                    </div>
+                    <div class="project-card">
+                        <h3>Zero Trust Home Lab</h3>
+                        <p>Infraestrutura conteinerizada gerenciada via Portainer. Acesso externo totalmente bloqueado por Firewall (UFW) e roteado via Cloudflare Tunnels.</p>
+                        <div class="tech-tags"><span>Docker</span> <span>Ubuntu</span> <span>Cloudflare Tunnels</span></div>
+                    </div>
+                    <div class="project-card">
+                        <h3>C# RESTful API</h3>
+                        <p>Backend legado para sistema ERP com RBAC (Controle de Acesso Baseado em Roles), integrando bancos de dados relacionais e NoSQL.</p>
+                        <div class="tech-tags"><span>.NET</span> <span>SQL Server</span> <span>MongoDB</span></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="view-certificados" class="view">
+            <section>
+                <h2 class="section-title">certificados</h2>
+                <div class="list-item">
+                    <h3>Linux Unhatched</h3>
+                    <span class="date">Março 2026 • Cisco Networking Academy (NDG)</span>
+                    <p>Certificação introdutória comprovando o domínio prático do terminal Linux, navegação de diretórios, permissões de arquivos e operações básicas de linha de comando.</p>
+                </div>
+                <div class="list-item" style="border-left-color: var(--text-muted);">
+                    <h3 style="color: var(--text-muted);">Em andamento / Estudos atuais</h3>
+                    <span class="date">Meta para 2026</span>
+                    <p>- Microsoft Azure Fundamentals (AZ-900)<br>- Linux Professional Institute Certification (LPIC-1)</p>
+                </div>
+            </section>
+        </div>
+
+        <div id="view-experiencia" class="view">
+            <section>
+                <h2 class="section-title">experiencia</h2>
+                <div class="list-item">
+                    <h3>Analista de Suporte Jr / Infraestrutura</h3>
+                    <span class="date">Atuação Atual</span>
+                    <p>Atuação focada na resolução de problemas de infraestrutura de TI, suporte técnico e manutenção de sistemas operacionais. Gerenciamento prático de ambientes Linux e Windows, com conhecimentos em redes e protocolos essenciais.</p>
+                </div>
+                <div class="list-item">
+                    <h3>Administrador de Infraestrutura (Home Lab)</h3>
+                    <span class="date">Projeto Contínuo</span>
+                    <p>Arquitetura e manutenção de um servidor local Ubuntu. Responsável por provisionar serviços via containers Docker, monitoramento de saúde do sistema, e implementação de túneis seguros (Zero Trust) para acesso externo sem exposição de portas.</p>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <div class="social-links">
+                <a href="https://github.com/XxzubcovxX" target="_blank">~/github</a>
+                <a href="https://www.linkedin.com/in/andr%C3%A9-zubcov-251747252/" target="_blank">~/linkedin</a>
+                <a href="mailto:andre02zub@gmail.com">~/email</a>
+            </div>
+            <p style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
+                [system_status]: Hosted on Ubuntu Server via Docker. Proxied securely by Cloudflare.
+            </p>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- 1. LÓGICA DO TERMINAL INTERATIVO ---
+        const cmdInput = document.getElementById('cmd-input');
+        const views = {
+            'home': document.getElementById('view-home'),
+            'certificados': document.getElementById('view-certificados'),
+            'experiencia': document.getElementById('view-experiencia')
+        };
+        const promptSpan = document.querySelector('.term-prompt');
+        const feedback = document.getElementById('term-feedback');
+
+        document.getElementById('interactive-terminal').addEventListener('click', () => cmdInput.focus());
+
+        function showFeedback(msg) {
+            feedback.textContent = msg;
+            feedback.style.display = 'block';
+            setTimeout(() => { feedback.style.display = 'none'; }, 3000);
+        }
+
+        function changeView(viewName, pathName) {
+            Object.values(views).forEach(view => view.classList.remove('active'));
+            views[viewName].classList.add('active');
+            promptSpan.innerHTML = `root@portfolio<span style="color:var(--accent-blue)">:~${pathName}</span><span style="color:var(--text-main)">#</span>`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        cmdInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const cmd = this.value.trim().toLowerCase();
+                this.value = ''; 
+
+                if (cmd === 'cd certificados') { changeView('certificados', '/certificados'); showFeedback('Directory changed to /certificados'); } 
+                else if (cmd === 'cd experiencia' || cmd === 'cd exp') { changeView('experiencia', '/experiencia'); showFeedback('Directory changed to /experiencia'); } 
+                else if (cmd === 'cd ..' || cmd === 'cd ~' || cmd === 'cd home' || cmd === 'cd /') { changeView('home', ''); showFeedback('Returned to home directory'); }
+                else if (cmd === 'ls') { showFeedback('Directories: home/  certificados/  experiencia/'); }
+                else if (cmd === 'help') { showFeedback('Available Commands: ls, cd certificados, cd experiencia, cd ..'); }
+                else if (cmd === 'clear') { showFeedback('Terminal cleared.'); }
+                else if (cmd !== '') { showFeedback(`bash: ${cmd}: command not found. Type 'help'.`); }
+            }
+        });
+
+        // --- 2. LÓGICA DO FUNDO ANIMADO ---
+        const snippets = [
+            "sudo ufw allow 22/tcp\nRule added",
+            "docker exec -it webserver /bin/bash\nroot@container:/#",
+            "tail -f /var/log/auth.log\nAccepted publickey for andre",
+            "htop\nCPU[||||||||       24.5%]\nMem[|||||||||||    1.2G/32G]",
+            "ping -c 4 8.8.8.8\n64 bytes from 8.8.8.8: time=14.2 ms"
+        ];
+        const bgContainer = document.getElementById('bg-terminals');
+
+        function createTypingTerminal() {
+            const term = document.createElement('div');
+            term.className = 'bg-terminal';
+            term.style.top = Math.random() * 80 + 10 + '%';
+            if (Math.random() > 0.5) term.style.left = Math.random() * 20 + '%';
+            else term.style.right = Math.random() * 20 + '%';
+            bgContainer.appendChild(term);
+
+            const code = snippets[Math.floor(Math.random() * snippets.length)];
+            let i = 0;
+            function typeChar() {
+                if (i < code.length) {
+                    term.textContent += code.charAt(i);
+                    i++;
+                    setTimeout(typeChar, Math.random() * 60 + 20);
+                } else {
+                    term.textContent += '█';
+                    setTimeout(() => {
+                        term.style.transition = "opacity 2s";
+                        term.style.opacity = "0";
+                        setTimeout(() => term.remove(), 2000);
+                    }, 2000);
+                }
+            }
+            typeChar();
+        }
+        setInterval(createTypingTerminal, 4000);
+        createTypingTerminal();
+
+        // --- 3. LÓGICA DO DASHBOARD (Lendo o JSON) ---
+        function atualizarDashboard() {
+            // Adiciona um timestamp na URL para evitar cache no navegador
+            fetch('status.json?nocache=' + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) throw new Error("JSON não encontrado");
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('sys-status').innerHTML = `<div class="pulse"></div> ${data.status}`;
+                    document.getElementById('sys-uptime').innerText = `Uptime: ${data.uptime}`;
+                    
+                    document.getElementById('sys-cpu').innerText = `${data.cpu_percent}%`;
+                    document.getElementById('bar-cpu').style.width = `${data.cpu_percent}%`;
+                    
+                    document.getElementById('sys-ram').innerText = data.ram_text;
+                    document.getElementById('bar-ram').style.width = `${data.ram_percent}%`;
+                    
+                    document.getElementById('sys-docker').innerText = data.docker_count;
+                })
+                .catch(error => {
+                    console.error("Aguardando status.json...", error);
+                    // Se o JSON ainda não existir, ele vai ficar marcando "--" (ou BOOTING) sem quebrar o site.
+                });
+        }
+
+        // Chama na hora que a página carrega e repete a cada 60 segundos
+        atualizarDashboard();
+        setInterval(atualizarDashboard, 60000);
+    </script>
+</body>
+</html>
