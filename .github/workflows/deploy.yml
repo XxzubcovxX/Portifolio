@@ -1,0 +1,23 @@
+name: Deploy Portfolio HomeLab
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-para-servidor:
+    runs-on: self-hosted
+
+    steps:
+      - name: 📥 Puxando o código novo (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 🚀 Sincronizando arquivos e atualizando Nginx
+        run: |
+          echo "Copiando arquivos atualizados para a pasta de produção..."
+          rsync -av --exclude='.git/' --exclude='.github/' --exclude='status.json' ./ /home/zubgorka/portifolio/
+          
+          echo "Garantindo que o container web está de pé..."
+          cd /home/zubgorka/portifolio/
+          docker compose up -d
