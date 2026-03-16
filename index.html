@@ -52,13 +52,59 @@
             display: flex; align-items: center; z-index: 1000; 
             backdrop-filter: blur(10px);
             box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            justify-content: space-between;
         }
+
+        .terminal-content { display: flex; align-items: center; flex-grow: 1; }
+
         .term-prompt { color: var(--status-green); margin-right: 15px; font-weight: bold; white-space: nowrap; }
         .term-prompt span { color: var(--text-main); }
         
         #cmd-input {
             background: transparent; border: none; color: #fff; font-family: var(--font-mono);
             font-size: 1.1rem; width: 100%; outline: none; caret-color: var(--accent-blue);
+        }
+
+        /* --- BOTÕES GUI (NOVOS) --- */
+        #gui-nav { display: none; gap: 15px; }
+        .gui-btn {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .gui-btn:hover { background: var(--accent-blue); color: #000; }
+
+        /* --- TOGGLE MODE --- */
+        .mode-switch {
+            display: flex;
+            background: #161b22;
+            padding: 4px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            margin-left: 20px;
+        }
+        .mode-btn {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.3s;
+            color: var(--text-muted);
+            border: none;
+            background: transparent;
+        }
+        .mode-btn.active {
+            background: var(--accent-blue);
+            color: #000;
+            font-weight: bold;
         }
         
         #term-feedback {
@@ -81,6 +127,8 @@
         @media (max-width: 600px) {
             header { flex-direction: column; text-align: center; }
             .header-info h1 { font-size: 2.2rem; }
+            #interactive-terminal { flex-direction: column; gap: 10px; padding: 10px; }
+            .mode-switch { margin-left: 0; }
         }
 
         /* --- DASHBOARD DE STATUS --- */
@@ -113,6 +161,8 @@
         .section-title { font-family: var(--font-mono); font-size: 1.2rem; color: var(--accent-blue); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
         .section-title::before { content: '~/'; color: var(--text-muted); }
         p { line-height: 1.7; margin-bottom: 1rem; color: var(--text-main); }
+        ul { margin-bottom: 1rem; padding-left: 1.2rem; color: var(--text-main); line-height: 1.6; }
+        li { margin-bottom: 0.5rem; }
 
         /* --- CARDS --- */
         .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
@@ -127,6 +177,7 @@
         .list-item { border-left: 3px solid var(--accent-purple); padding-left: 1.5rem; margin-bottom: 2rem; }
         .list-item h3 { color: #fff; margin-bottom: 5px; }
         .list-item .date { font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px; display: block; }
+        .list-item .company { color: var(--accent-blue); font-weight: bold; font-size: 0.95rem; display: block; margin-bottom: 8px; }
 
         /* --- RODAPÉ --- */
         footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid var(--border-color); margin-top: 3rem; }
@@ -140,8 +191,21 @@
     <div id="bg-terminals"></div>
 
     <div id="interactive-terminal">
-        <div class="term-prompt">root@portfolio<span>:~#</span></div>
-        <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" placeholder="Type 'help' or 'ls'...">
+        <div class="terminal-content">
+            <div class="term-prompt">root@portfolio<span>:~#</span></div>
+            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" placeholder="Type 'help'...">
+            
+            <div id="gui-nav">
+                <button class="gui-btn" onclick="changeView('home', '')"><span>🏠</span> Home</button>
+                <button class="gui-btn" onclick="changeView('certificados', '/certificados')"><span>📜</span> Certificados</button>
+                <button class="gui-btn" onclick="changeView('experiencia', '/experiencia')"><span>💼</span> Experiência</button>
+            </div>
+        </div>
+
+        <div class="mode-switch">
+            <button class="mode-btn active" id="btn-cli" onclick="setMode('cli')">⌨️ CLI</button>
+            <button class="mode-btn" id="btn-gui" onclick="setMode('gui')">🖱️ GUI</button>
+        </div>
     </div>
     <div id="term-feedback"></div>
 
@@ -180,27 +244,27 @@
         <div id="view-home" class="view active">
             <section>
                 <h2 class="section-title">whoami</h2>
-                <p>Estudante do 7º semestre de Engenharia da Computação no ENIAC. Construindo minha carreira em infraestrutura, com forte foco na administração de servidores Linux, Docker e Cloud.</p>
-                <p>Acredito na automação como solução para problemas repetitivos e gerencio meu próprio Home Lab (onde este site está hospedado) para validar na prática conceitos de redes, segurança (Hardening/Wazuh) e CI/CD.</p>
+                <p>Estudante de Engenharia da Computação (7º Semestre) no <strong>Centro Universitário ENIAC</strong>. Especializando em infraestrutura crítica, segurança Linux e automação de containers.</p>
+                <p>Atualmente focado em sustentar ambientes escaláveis e seguros, utilizando ferramentas de <strong>CI/CD</strong>, <strong>Hardening de servidores</strong> e arquitetura <strong>Zero Trust</strong> através do meu próprio laboratório de dados.</p>
             </section>
 
             <section>
-                <h2 class="section-title">projects</h2>
+                <h2 class="section-title">featured_projects</h2>
                 <div class="projects-grid">
                     <div class="project-card">
-                        <h3>Server Automation Shell</h3>
-                        <p>Scripts modulares em Bash para monitoramento de serviços (Nginx, Docker), auditoria de logs e gestão de usuários com privilégios de root.</p>
-                        <div class="tech-tags"><span>Bash</span> <span>Fail2Ban</span> <span>Linux</span></div>
+                        <h3>CI/CD Pipeline & Home Lab</h3>
+                        <p>Infraestrutura real rodando em Ubuntu Server. Deploy automatizado via GitHub Actions e Self-Hosted Runners, com roteamento seguro via Cloudflare Tunnels.</p>
+                        <div class="tech-tags"><span>GitHub Actions</span> <span>Docker</span> <span>Cloudflare</span></div>
                     </div>
                     <div class="project-card">
-                        <h3>Zero Trust Home Lab</h3>
-                        <p>Infraestrutura conteinerizada gerenciada via Portainer. Acesso externo totalmente bloqueado por Firewall (UFW) e roteado via Cloudflare Tunnels.</p>
-                        <div class="tech-tags"><span>Docker</span> <span>Ubuntu</span> <span>Cloudflare Tunnels</span></div>
+                        <h3>Security & Hardening Suite</h3>
+                        <p>Configuração de políticas de segurança ativa: Firewall (UFW), Fail2Ban, gestão de chaves SSH (Authorization Keys) e auditoria de logs Bash.</p>
+                        <div class="tech-tags"><span>Security</span> <span>Bash</span> <span>Linux</span></div>
                     </div>
                     <div class="project-card">
-                        <h3>C# RESTful API</h3>
-                        <p>Backend legado para sistema ERP com RBAC (Controle de Acesso Baseado em Roles), integrando bancos de dados relacionais e NoSQL.</p>
-                        <div class="tech-tags"><span>.NET</span> <span>SQL Server</span> <span>MongoDB</span></div>
+                        <h3>RESTful Systems Development</h3>
+                        <p>Experiência prática na construção de APIs e funcionalidades backend para sistemas acadêmicos e ERPs corporativos.</p>
+                        <div class="tech-tags"><span>C#</span> <span>.NET</span> <span>PHP</span></div>
                     </div>
                 </div>
             </section>
@@ -208,32 +272,86 @@
 
         <div id="view-certificados" class="view">
             <section>
-                <h2 class="section-title">certificados</h2>
+                <h2 class="section-title">certificados_e_formacao</h2>
+                
                 <div class="list-item">
                     <h3>Linux Unhatched</h3>
-                    <span class="date">Março 2026 • Cisco Networking Academy (NDG)</span>
-                    <p>Certificação introdutória comprovando o domínio prático do terminal Linux, navegação de diretórios, permissões de arquivos e operações básicas de linha de comando.</p>
+                    <span class="date">Março 2026 • Cisco Networking Academy / NDG</span>
+                    <p>Domínio de fundamentos do sistema operacional Linux, manipulação de linha de comando e permissões.</p>
                 </div>
-                <div class="list-item" style="border-left-color: var(--text-muted);">
-                    <h3 style="color: var(--text-muted);">Em andamento / Estudos atuais</h3>
-                    <span class="date">Meta para 2026</span>
-                    <p>- Microsoft Azure Fundamentals (AZ-900)<br>- Linux Professional Institute Certification (LPIC-1)</p>
+
+                <div class="list-item">
+                    <h3>Fundamentos do Hardware do Computador</h3>
+                    <span class="date">Maio 2025 • Cisco Networking Academy</span>
+                    <p>Comprovação técnica em manutenção, montagem e fundamentos de hardware.</p>
+                </div>
+
+                <div class="list-item">
+                    <h3>Cyber Security (Segurança da Informação)</h3>
+                    <span class="date">Janeiro 2026 • Udemy (Prof. Stefan Sales)</span>
+                    <p>Capacitação em proteção de dados, vulnerabilidades e práticas de segurança digital.</p>
+                </div>
+
+                <div class="list-item">
+                    <h3>Algoritmos e Lógica de Programação</h3>
+                    <span class="date">Janeiro 2026 • Udemy (Prof. Nelio Alves)</span>
+                    <p>Base sólida em estruturação de algoritmos e resolução de problemas complexos.</p>
+                </div>
+
+                <div class="list-item">
+                    <h3>Metodologias Ágeis para Gerenciamento de Projetos</h3>
+                    <span class="date">Janeiro 2023 • Centro Universitário ENIAC</span>
+                    <p>Treinamento prático em frameworks ágeis para otimização de fluxos de trabalho.</p>
+                </div>
+
+                <div class="list-item">
+                    <h3>Técnico em Administração</h3>
+                    <span class="date">2020 - 2021 • ETEC Prof. Luzia Maria Machado</span>
+                    <p>Formação técnica focada em gestão, processos administrativos e organização.</p>
+                </div>
+
+                <div class="list-item" style="border-left-color: var(--text-muted); opacity: 0.8;">
+                    <h3 style="color: var(--text-muted);">Roadmap de Especialização (Em Estudo)</h3>
+                    <span class="date">Targets para 2026</span>
+                    <p>
+                        • Microsoft Azure Fundamentals (AZ-900) <br>
+                        • Linux Professional Institute Certification (LPIC-1) 
+                    </p>
                 </div>
             </section>
         </div>
 
         <div id="view-experiencia" class="view">
             <section>
-                <h2 class="section-title">experiencia</h2>
+                <h2 class="section-title">experiencia_profissional</h2>
+                
                 <div class="list-item">
-                    <h3>Analista de Suporte Jr / Infraestrutura</h3>
-                    <span class="date">Atuação Atual</span>
-                    <p>Atuação focada na resolução de problemas de infraestrutura de TI, suporte técnico e manutenção de sistemas operacionais. Gerenciamento prático de ambientes Linux e Windows, com conhecimentos em redes e protocolos essenciais.</p>
+                    <h3>Líder de Estágio (Infraestrutura e Cloud)</h3>
+                    <span class="company">Centro Universitário ENIAC</span>
+                    <span class="date">Nov 2025 – Jan 2026</span>
+                    <ul>
+                        <li>Gestão técnica de equipe em projetos de infraestrutura Linux.</li>
+                        <li>Configuração e sustentação de servidores VPS Ubuntu.</li>
+                        <li>Implementação de Hardening (UFW, Fail2Ban) e gestão de SSH Keys.</li>
+                    </ul>
                 </div>
+
                 <div class="list-item">
-                    <h3>Administrador de Infraestrutura (Home Lab)</h3>
-                    <span class="date">Projeto Contínuo</span>
-                    <p>Arquitetura e manutenção de um servidor local Ubuntu. Responsável por provisionar serviços via containers Docker, monitoramento de saúde do sistema, e implementação de túneis seguros (Zero Trust) para acesso externo sem exposição de portas.</p>
+                    <h3>Estagiário de Desenvolvimento de Software</h3>
+                    <span class="company">Centro Universitário ENIAC</span>
+                    <span class="date">Jul 2025 – Nov 2025</span>
+                    <ul>
+                        <li>Desenvolvimento de funcionalidades Backend em C# e .NET.</li>
+                        <li>Manutenção de sistemas legados em PHP e SQL Server.</li>
+                        <li>Trabalho em ambiente ágil utilizando a metodologia Scrum.</li>
+                    </ul>
+                </div>
+
+                <div class="list-item">
+                    <h3>Auxiliar de Logística / Estoquista</h3>
+                    <span class="company">Evoluir Cosméticos</span>
+                    <span class="date">Set 2022 – Jan 2024</span>
+                    <p>Foco em organização de processos e gestão de fluxo de materiais, desenvolvendo disciplina e atenção aos detalhes (soft-skills aplicadas hoje à gestão de ativos de TI).</p>
                 </div>
             </section>
         </div>
@@ -245,7 +363,7 @@
                 <a href="mailto:andre02zub@gmail.com">~/email</a>
             </div>
             <p style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
-                [system_status]: Hosted on Ubuntu Server via Docker. Proxied securely by Cloudflare.
+                [infra_status]: Automated Deployment via GitHub Actions. Zero Trust Protected.
             </p>
         </footer>
 
@@ -254,6 +372,7 @@
     <script>
         // --- 1. LÓGICA DO TERMINAL INTERATIVO ---
         const cmdInput = document.getElementById('cmd-input');
+        const guiNav = document.getElementById('gui-nav');
         const views = {
             'home': document.getElementById('view-home'),
             'certificados': document.getElementById('view-certificados'),
@@ -262,7 +381,28 @@
         const promptSpan = document.querySelector('.term-prompt');
         const feedback = document.getElementById('term-feedback');
 
-        document.getElementById('interactive-terminal').addEventListener('click', () => cmdInput.focus());
+        // TROCA DE MODO (GUI vs CLI)
+        function setMode(mode) {
+            document.getElementById('btn-cli').classList.toggle('active', mode === 'cli');
+            document.getElementById('btn-gui').classList.toggle('active', mode === 'gui');
+            
+            if (mode === 'gui') {
+                cmdInput.style.display = 'none';
+                guiNav.style.display = 'flex';
+                showFeedback('GUI Mode Enabled');
+            } else {
+                cmdInput.style.display = 'block';
+                guiNav.style.display = 'none';
+                cmdInput.focus();
+                showFeedback('CLI Mode Enabled');
+            }
+        }
+
+        document.getElementById('interactive-terminal').addEventListener('click', (e) => {
+            if(!e.target.closest('.mode-switch') && !e.target.closest('#gui-nav')) {
+                cmdInput.focus();
+            }
+        });
 
         function showFeedback(msg) {
             feedback.textContent = msg;
@@ -333,7 +473,6 @@
 
         // --- 3. LÓGICA DO DASHBOARD (Lendo o JSON) ---
         function atualizarDashboard() {
-            // Adiciona um timestamp na URL para evitar cache no navegador
             fetch('status.json?nocache=' + new Date().getTime())
                 .then(response => {
                     if (!response.ok) throw new Error("JSON não encontrado");
@@ -353,11 +492,9 @@
                 })
                 .catch(error => {
                     console.error("Aguardando status.json...", error);
-                    // Se o JSON ainda não existir, ele vai ficar marcando "--" (ou BOOTING) sem quebrar o site.
                 });
         }
 
-        // Chama na hora que a página carrega e repete a cada 60 segundos
         atualizarDashboard();
         setInterval(atualizarDashboard, 60000);
     </script>
