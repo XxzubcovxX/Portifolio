@@ -30,6 +30,11 @@
             padding-top: 90px; 
         }
 
+        /* Ajuste de padding para mobile quando o terminal expande */
+        @media (max-width: 768px) {
+            body { padding-top: 130px; }
+        }
+
         /* --- BACKGROUND ANIMADO --- */
         #bg-terminals {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -55,7 +60,7 @@
             justify-content: space-between;
         }
 
-        .terminal-content { display: flex; align-items: center; flex-grow: 1; }
+        .terminal-content { display: flex; align-items: center; flex-grow: 1; overflow: hidden; }
 
         .term-prompt { color: var(--status-green); margin-right: 15px; font-weight: bold; white-space: nowrap; }
         .term-prompt span { color: var(--text-main); }
@@ -65,8 +70,8 @@
             font-size: 1.1rem; width: 100%; outline: none; caret-color: var(--accent-blue);
         }
 
-        /* --- BOTÕES GUI (NOVOS) --- */
-        #gui-nav { display: none; gap: 15px; }
+        /* --- BOTÕES GUI --- */
+        #gui-nav { display: none; gap: 10px; flex-wrap: wrap; }
         .gui-btn {
             background: rgba(88, 166, 255, 0.1);
             border: 1px solid var(--accent-blue);
@@ -79,6 +84,7 @@
             align-items: center;
             gap: 8px;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .gui-btn:hover { background: var(--accent-blue); color: #000; }
 
@@ -90,6 +96,7 @@
             border-radius: 20px;
             border: 1px solid var(--border-color);
             margin-left: 20px;
+            flex-shrink: 0;
         }
         .mode-btn {
             padding: 4px 12px;
@@ -120,16 +127,9 @@
 
         /* --- CABEÇALHO E FOTO DE PERFIL --- */
         header { padding: 1rem 0 2rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; display: flex; align-items: center; gap: 25px; }
-        .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-blue); box-shadow: 0 0 15px rgba(88, 166, 255, 0.2); background-color: var(--bg-card); }
+        .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-blue); box-shadow: 0 0 15px rgba(88, 166, 255, 0.2); background-color: var(--bg-card); flex-shrink: 0; }
         .header-info h1 { font-size: 3rem; color: #ffffff; margin-bottom: 0.2rem; font-weight: 700; }
         .header-info h2 { font-family: var(--font-mono); font-size: 1.1rem; color: var(--accent-purple); font-weight: normal; }
-
-        @media (max-width: 600px) {
-            header { flex-direction: column; text-align: center; }
-            .header-info h1 { font-size: 2.2rem; }
-            #interactive-terminal { flex-direction: column; gap: 10px; padding: 10px; }
-            .mode-switch { margin-left: 0; }
-        }
 
         /* --- DASHBOARD DE STATUS --- */
         .server-status-board {
@@ -165,7 +165,7 @@
         li { margin-bottom: 0.5rem; }
 
         /* --- CARDS --- */
-        .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .project-card { border: 1px solid var(--border-color); border-radius: 6px; padding: 1.8rem; background-color: rgba(13, 17, 23, 0.5); transition: all 0.2s; height: 100%; }
         .project-card:hover { border-color: var(--accent-purple); transform: translateY(-3px); }
         .project-card h3 { font-size: 1.2rem; margin-bottom: 0.8rem; color: #fff; }
@@ -184,6 +184,27 @@
         .social-links { margin-bottom: 15px; font-family: var(--font-mono); font-size: 1rem; }
         .social-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; transition: color 0.2s; }
         .social-links a:hover { color: var(--accent-blue); text-shadow: 0 0 8px rgba(88, 166, 255, 0.5); }
+
+        /* --- MEDIA QUERIES PARA RESPONSIVIDADE --- */
+        @media (max-width: 768px) {
+            #interactive-terminal { flex-direction: column; height: auto; padding: 10px; }
+            .terminal-content { width: 100%; margin-bottom: 10px; }
+            .mode-switch { margin-left: 0; width: 100%; justify-content: center; }
+            .container { padding: 1rem; }
+            header { flex-direction: column; text-align: center; gap: 15px; }
+            .header-info h1 { font-size: 2.2rem; }
+            .server-status-board { grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; }
+            section { padding: 1.5rem; }
+            .projects-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .server-status-board { grid-template-columns: 1fr; }
+            .header-info h1 { font-size: 1.8rem; }
+            .term-prompt { font-size: 0.9rem; }
+            #cmd-input { font-size: 0.9rem; }
+            .gui-btn { font-size: 0.8rem; padding: 4px 8px; }
+        }
     </style>
 </head>
 <body>
@@ -360,7 +381,6 @@
             <div class="social-links">
                 <a href="https://github.com/XxzubcovxX" target="_blank">~/github</a>
                 <a href="https://www.linkedin.com/in/andr%C3%A9-zubcov-251747252/" target="_blank">~/linkedin</a>
-                <a href="mailto:andre02zub@gmail.com">~/email</a>
             </div>
             <p style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
                 [infra_status]: Automated Deployment via GitHub Actions. Zero Trust Protected.
@@ -381,7 +401,6 @@
         const promptSpan = document.querySelector('.term-prompt');
         const feedback = document.getElementById('term-feedback');
 
-        // TROCA DE MODO (GUI vs CLI)
         function setMode(mode) {
             document.getElementById('btn-cli').classList.toggle('active', mode === 'cli');
             document.getElementById('btn-gui').classList.toggle('active', mode === 'gui');
@@ -471,7 +490,7 @@
         setInterval(createTypingTerminal, 4000);
         createTypingTerminal();
 
-        // --- 3. LÓGICA DO DASHBOARD (Lendo o JSON) ---
+        // --- 3. LÓGICA DO DASHBOARD ---
         function atualizarDashboard() {
             fetch('status.json?nocache=' + new Date().getTime())
                 .then(response => {
@@ -481,13 +500,10 @@
                 .then(data => {
                     document.getElementById('sys-status').innerHTML = `<div class="pulse"></div> ${data.status}`;
                     document.getElementById('sys-uptime').innerText = `Uptime: ${data.uptime}`;
-                    
                     document.getElementById('sys-cpu').innerText = `${data.cpu_percent}%`;
                     document.getElementById('bar-cpu').style.width = `${data.cpu_percent}%`;
-                    
                     document.getElementById('sys-ram').innerText = data.ram_text;
                     document.getElementById('bar-ram').style.width = `${data.ram_percent}%`;
-                    
                     document.getElementById('sys-docker').innerText = data.docker_count;
                 })
                 .catch(error => {
